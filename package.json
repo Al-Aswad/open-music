@@ -1,0 +1,25 @@
+{
+  "name": "open-music",
+  "version": "1.0.0",
+  "description": "Open Music",
+  "main": "index.js",
+  "scripts": {
+    "start-prod": "NODE_ENV=production node ./src/server.js",
+    "dev": "nodemon ./src/server.js",
+    "lint": "eslint ./src",
+    "migrate": "node-pg-migrate"
+  },
+  "keywords": [
+    "openmusic"
+  ],
+  "author": "al-aswad",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/eslint-plugin": "^6.0.0",
+    "@hapi/hapi": "^20.2.2",
+    "dotenv": "^16.0.2",
+    "nanoid": "^4.0.0",
+    "node-pg-migrate": "^6.2.2",
+    "pg": "^8.8.0"
+  }
+}
