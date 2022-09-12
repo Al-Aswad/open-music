@@ -45,16 +45,16 @@ class AlbumsSerives {
     }
 
     async editAlbumById(id, {
-        title, year, performer, songId,
+        name, year,
     }) {
         const updatedAt = new Date().toISOString();
         const query = {
-            text: 'UPDATE albums SET title = $1, year = $2, performer = $3, song_id = $4, updated_at = $5 WHERE id = $6 RETURNING id',
-            values: [title, year, performer, songId, updatedAt, id],
+            text: 'UPDATE albums SET name = $1, year = $2, updated_at = $3 WHERE id = $4 RETURNING id',
+            values: [name, year, updatedAt, id],
         };
         const result = await this._pool.query(query);
         if (!result.rows.length) {
-            throw new InvariantError('Gagal memperbarui lagu. Id tidak ditemukan');
+            throw new NotFoundError('Gagal memperbarui lagu. Id tidak ditemukan');
         }
     }
 
@@ -65,7 +65,7 @@ class AlbumsSerives {
         };
         const result = await this._pool.query(query);
         if (!result.rows.length) {
-            throw new InvariantError('Lagu gagal dihapus. Id tidak ditemukan');
+            throw new NotFoundError('Lagu gagal dihapus. Id tidak ditemukan');
         }
     }
 }
