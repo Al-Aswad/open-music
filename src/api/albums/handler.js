@@ -1,3 +1,5 @@
+const ClientError = require('../../exeptions/ClientError');
+
 /* eslint-disable no-underscore-dangle */
 class AlbumsHandler {
     constructor(service, validator) {
@@ -13,13 +15,8 @@ class AlbumsHandler {
     async postAlbumHandler(request, h) {
         try {
             this._validator.validateAlbumPayload(request.payload);
-            const { title = 'untitled' } = request.payload;
-            const { year } = request.payload;
-            const { performer } = request.payload;
-            const { songId } = request.payload;
-            const albumId = await this._service.addAlbum({
-                title, year, performer, songId,
-            });
+            const { name, year } = request.payload;
+            const albumId = await this._service.addAlbum({ name, year });
             const response = h.response({
                 status: 'success',
                 message: 'Album berhasil ditambahkan',
@@ -30,7 +27,23 @@ class AlbumsHandler {
             response.code(201);
             return response;
         } catch (error) {
-            return error;
+            if (error instanceof ClientError) {
+                const response = h.response({
+                    status: 'fail',
+                    message: error.message,
+                });
+                response.code(error.statusCode);
+                return response;
+            }
+
+            // Server ERROR!
+            const response = h.response({
+                status: 'error',
+                message: 'Maaf, terjadi kegagalan pada server kami.',
+            });
+            response.code(500);
+            console.error(error);
+            return response;
         }
     }
 
