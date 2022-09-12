@@ -1,6 +1,7 @@
 const nanoid = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exeptions/InvariantError');
+const NotFoundError = require('../../exeptions/NotFoundError');
 
 /* eslint-disable no-underscore-dangle */
 class AlbumsSerives {
@@ -33,12 +34,12 @@ class AlbumsSerives {
 
     async getAlbumById(id) {
         const query = {
-            text: 'SELECT * FROM albums WHERE id = $1',
+            text: 'SELECT id,name,year FROM albums WHERE id = $1',
             values: [id],
         };
         const result = await this._pool.query(query);
         if (!result.rows.length) {
-            throw new InvariantError('Lagu tidak ditemukan');
+            throw new NotFoundError('Lagu tidak ditemukan');
         }
         return result.rows[0];
     }
