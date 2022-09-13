@@ -11,7 +11,7 @@ class SongsSerives {
     async addSong({
         title, year, performer, genre, duration, albumId,
     }) {
-        const id = `album-${nanoid(16)}`;
+        const id = `song-${nanoid(16)}`;
         const createdAt = new Date().toISOString();
         const updatedAt = createdAt;
         const query = {
@@ -32,7 +32,7 @@ class SongsSerives {
 
     async getSongById(id) {
         const query = {
-            text: 'SELECT * FROM songs WHERE id = $1',
+            text: 'SELECT id, title, year, performer, genre, duration, album_id FROM songs WHERE id = $1',
             values: [id],
         };
         const result = await this._pool.query(query);
@@ -53,6 +53,17 @@ class SongsSerives {
         const result = await this._pool.query(query);
         if (!result.rows.length) {
             throw new NotFoundError('Gagal memperbarui lagu. Id tidak ditemukan');
+        }
+    }
+
+    async deleteSongById(id) {
+        const query = {
+            text: 'DELETE FROM songs WHERE id = $1 RETURNING id',
+            values: [id],
+        };
+        const result = await this._pool.query(query);
+        if (!result.rows.length) {
+            throw new NotFoundError('Lagu gagal dihapus. Id tidak ditemukan');
         }
     }
 }
