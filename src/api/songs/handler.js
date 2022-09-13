@@ -53,11 +53,11 @@ class SongsHandler {
     }
 
     async getSongsHandler() {
-        const albums = await this._service.getSongs();
+        const songs = await this._service.getSongs();
         return {
             status: 'success',
             data: {
-                albums,
+                songs,
             },
         };
     }
