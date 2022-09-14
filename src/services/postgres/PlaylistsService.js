@@ -6,8 +6,10 @@ const AuthorizationError = require('../../exeptions/AuthorizationError');
 const NotFoundError = require('../../exeptions/NotFoundError');
 
 class PlaylistsService {
-    constructor() {
+    constructor(collaborationsService) {
         this._pool = new Pool();
+
+        this._collaborationService = collaborationsService;
     }
 
     async addPlaylist({ name, owner }) {
@@ -21,9 +23,14 @@ class PlaylistsService {
         return result.rows[0].id;
     }
 
-    async getPlaylists() {
+    async getPlaylists(owner) {
         const query = {
-            text: 'SELECT playlists.id, playlists.name, users.username FROM playlists LEFT JOIN users ON playlists.owner = users.id',
+            text: `
+                SELECT playlists.id, playlists.name, users.username FROM playlists
+                INNER JOIN users ON playlists.owner = users.id
+                LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
+                WHERE playlists.owner = $1 OR collaborations.user_id = $1`,
+            values: [owner],
         };
 
         const result = await this._pool.query(query);
@@ -95,16 +102,12 @@ class PlaylistsService {
     }
 
     async deleteSongFromPlaylist(playlist_id, song_id) {
-        console.log('Playlist Id ', playlist_id, song_id);
         const query = {
             text: 'DELETE FROM playlist_songs WHERE playlist_id = $1 AND song_id = $2',
             values: [playlist_id, song_id],
         };
 
-        console.log('Query ', query);
-
         await this._pool.query(query);
-
         await this.deleteSong(song_id);
     }
 
@@ -132,6 +135,22 @@ class PlaylistsService {
         const playlist = result.rows[0];
         if (playlist.owner !== owner) {
             throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+        }
+    }
+
+    async verifyPlaylistAccess(playlist_id, user_id) {
+        try {
+            await this.verifyPlaylistOwner(playlist_id, user_id);
+        } catch (error) {
+            if (error instanceof NotFoundError) {
+                throw error;
+            }
+
+            try {
+                await this._collaborationService.verifyCollaborator(playlist_id, user_id);
+            } catch {
+                throw error;
+            }
         }
     }
 }

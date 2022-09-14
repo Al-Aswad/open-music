@@ -17,7 +17,6 @@ class Playlistshandler {
             this._validator.validatePlaylistPayload(request.payload);
             const { name } = request.payload;
             const { id: credentialId } = request.auth.credentials;
-            console.log('credentialId ', credentialId);
 
             const playlistId = await this._service.addPlaylist({ name, owner: credentialId });
 
@@ -126,10 +125,10 @@ class Playlistshandler {
         try {
             this._validator.validateSongToPlaylistPayload(request.payload);
             const { id } = request.params;
-            console.log('playlistId ', id);
             const { songId } = request.payload;
             const { id: credentialId } = request.auth.credentials;
-            await this._service.verifyPlaylistOwner(id, credentialId);
+
+            await this._service.verifyPlaylistAccess(id, credentialId);
             await this._service.verifySongAvailable(songId);
             await this._service.addSongToPlaylist(id, songId);
 
@@ -165,7 +164,7 @@ class Playlistshandler {
         try {
             const { id } = request.params;
             const { id: credentialId } = request.auth.credentials;
-            await this._service.verifyPlaylistOwner(id, credentialId);
+            await this._service.verifyPlaylistAccess(id, credentialId);
             const playlist = await this._service.getSongsFromPlaylist(id);
 
             const response = h.response({
@@ -204,7 +203,7 @@ class Playlistshandler {
             const { id } = request.params;
             const { songId } = request.payload;
             const { id: credentialId } = request.auth.credentials;
-            await this._service.verifyPlaylistOwner(id, credentialId);
+            await this._service.verifyPlaylistAccess(id, credentialId);
             await this._service.deleteSongFromPlaylist(id, songId);
 
             const response = h.response({
