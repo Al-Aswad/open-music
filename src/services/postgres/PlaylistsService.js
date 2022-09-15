@@ -129,7 +129,7 @@ class PlaylistsService {
         const result = await this._pool.query(query);
 
         if (!result.rows.length) {
-            throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan');
+            throw new NotFoundError('Playlist tidak ditemukan');
         }
 
         const playlist = result.rows[0];
@@ -152,6 +152,43 @@ class PlaylistsService {
                 throw error;
             }
         }
+    }
+
+    async addPlaylistActivity(playlistId, songId, userId, action = 'add') {
+        const id = `playlis_activityt-${nanoid(16)}`;
+        const date = new Date().toISOString();
+
+        const query = {
+            text: 'INSERT INTO playlist_song_activities VALUES($1, $2, $3, $4, $5, $6)',
+            values: [id, playlistId, songId, userId, action, date],
+        };
+
+        await this._pool.query(query);
+    }
+
+    async getPlaylistActivities(playlistId) {
+        const queryPlaylist = {
+            text: 'SELECT * FROM playlists WHERE id = $1',
+            values: [playlistId],
+        };
+
+        const resultPlaylist = await this._pool.query(queryPlaylist);
+
+        if (!resultPlaylist.rows.length) {
+            throw new NotFoundError('Playlist tidak ditemukan');
+        }
+
+        const query = {
+            text: `SELECT u.username, s.title, a.action, a.date time FROM playlist_song_activities a 
+            INNER JOIN users u ON a.user_id = u.id 
+            LEFT JOIN collaborations c ON c.playlist_id = a.playlist_id
+            LEFT JOIN songs s ON s.id = a.song_id
+            WHERE a.playlist_id = $1 OR c.user_id = $1`,
+            values: [playlistId],
+        };
+
+        const result = await this._pool.query(query);
+        return result.rows;
     }
 }
 
