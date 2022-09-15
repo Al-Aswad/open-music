@@ -154,7 +154,7 @@ class PlaylistsService {
         }
     }
 
-    async addPlaylistActivity(playlistId, songId, userId, action = 'add') {
+    async addPlaylistActivity(playlistId, songId, userId, action) {
         const id = `playlis_activityt-${nanoid(16)}`;
         const date = new Date().toISOString();
 
