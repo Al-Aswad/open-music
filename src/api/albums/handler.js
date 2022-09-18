@@ -192,9 +192,7 @@ class AlbumsHandler {
 
     async postAlbumLikeByIdHandler(request, h) {
         try {
-            // delete request.response.output.headers['X-Data-Source'];
             delete request.headers['X-Data-Source'];
-            console.log('Cookie ', request.server);
 
             const { id } = request.params;
             const { id: userId } = request.auth.credentials;
