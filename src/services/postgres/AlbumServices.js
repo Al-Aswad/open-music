@@ -105,6 +105,67 @@ class AlbumsSerives {
 
         return result.rows[0].cover;
     }
+
+    async addAlbumLikeById(userId, albumId) {
+        const id = `user-album-like-${nanoid(16)}`;
+        console.log('user_id', userId);
+        console.log('album_id', albumId);
+        const query = {
+            text: 'INSERT INTO user_album_likes(id, user_id, album_id) VALUES($1, $2, $3) RETURNING id',
+            values: [id, userId, albumId],
+        };
+
+        const result = await this._pool.query(query);
+        if (!result.rows.length) {
+            throw new InvariantError('Gagal menambahkan like');
+        }
+
+        return 'Album berhasil disukai';
+    }
+
+    async verifyAlbumExist(id) {
+        const query = {
+            text: 'SELECT id FROM albums WHERE id = $1',
+            values: [id],
+        };
+        const result = await this._pool.query(query);
+        if (!result.rows.length) {
+            throw new NotFoundError('Album tidak ditemukan');
+        }
+    }
+
+    async countAlbumLikeById(albumId) {
+        const query = {
+            text: 'SELECT COUNT(*) FROM user_album_likes WHERE album_id = $1',
+            values: [albumId],
+        };
+        const result = await this._pool.query(query);
+        return result.rows[0].count;
+    }
+
+    async verifyAlbumLikeExist(userId, albumId) {
+        const query = {
+            text: 'SELECT id FROM user_album_likes WHERE user_id = $1 AND album_id = $2',
+            values: [userId, albumId],
+        };
+        const result = await this._pool.query(query);
+        console.log(result.rows);
+        if (!result.rows.length) {
+            return false;
+        }
+        return true;
+    }
+
+    async deleteAlbumLikeById(userId, albumId) {
+        const query = {
+            text: 'DELETE FROM user_album_likes WHERE user_id = $1 AND album_id = $2 RETURNING id',
+            values: [userId, albumId],
+        };
+        const result = await this._pool.query(query);
+        if (!result.rows.length) {
+            throw new InvariantError('Gagal menghapus like');
+        }
+    }
 }
 
 module.exports = AlbumsSerives;
