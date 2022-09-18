@@ -139,7 +139,11 @@ class AlbumsSerives {
     async countAlbumLikeById(albumId) {
         try {
             const result = await this._cacheService.get(`likes:album-${albumId}`);
-            return JSON.parse(result);
+            const count = JSON.parse(result);
+            return {
+                count,
+                isCached: true,
+            };
         } catch (error) {
             const query = {
                 text: 'SELECT COUNT(id) FROM user_album_likes WHERE album_id = $1',
@@ -147,7 +151,11 @@ class AlbumsSerives {
             };
             const result = await this._pool.query(query);
             await this._cacheService.set(`likes:album-${albumId}`, JSON.stringify(result.rows[0].count));
-            return result.rows[0].count;
+            const { count } = result.rows[0];
+            return {
+                count,
+                isCached: false,
+            };
         }
     }
 

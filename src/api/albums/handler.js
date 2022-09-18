@@ -243,15 +243,19 @@ class AlbumsHandler {
         try {
             const { id } = request.params;
             await this._service.verifyAlbumExist(id);
-            const likes = await this._service.countAlbumLikeById(id);
+            const { count, isCached } = await this._service.countAlbumLikeById(id);
+
             const response = h.response({
                 status: 'success',
                 data: {
-                    likes: parseInt(likes, 10),
+                    likes: parseInt(count, 10),
                 },
             });
             response.code(200);
-            response.header('X-Data-Source', 'cache');
+            if (isCached) {
+                response.header('X-Data-Source', 'cache');
+            }
+
             return response;
         } catch (error) {
             if (error instanceof ClientError) {
