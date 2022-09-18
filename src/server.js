@@ -43,7 +43,7 @@ const CacheService = require('./services/redis/CacheService');
 const init = async () => {
     const cacheService = new CacheService();
     const albumsServices = new AlbumsSerives(cacheService);
-    const songsServices = new SongsSerives();
+    const songsServices = new SongsSerives(cacheService);
     const usersServices = new UsersService();
     const authenticationsService = new AuthenticationsService();
     const collaborationsService = new CollaborationsService();
