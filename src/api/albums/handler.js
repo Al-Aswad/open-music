@@ -192,6 +192,10 @@ class AlbumsHandler {
 
     async postAlbumLikeByIdHandler(request, h) {
         try {
+            // delete request.response.output.headers['X-Data-Source'];
+            delete request.headers['X-Data-Source'];
+            console.log('Cookie ', request.server);
+
             const { id } = request.params;
             const { id: userId } = request.auth.credentials;
 
@@ -205,6 +209,7 @@ class AlbumsHandler {
                     message: 'Like berhasil dihapus',
                 });
                 response.code(201);
+                response.header('X-Data-Source', null);
                 return response;
             }
             await this._service.addAlbumLikeById(userId, id);
@@ -213,6 +218,7 @@ class AlbumsHandler {
                 message: 'Like berhasil ditambahkan',
             });
             response.code(201);
+            response.header('X-Data-Source', null);
             return response;
         } catch (error) {
             if (error instanceof ClientError) {
