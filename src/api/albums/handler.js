@@ -2,14 +2,16 @@ const ClientError = require('../../exeptions/ClientError');
 
 /* eslint-disable no-underscore-dangle */
 class AlbumsHandler {
-    constructor(service, validator) {
+    constructor(service, storageService, validator) {
         this._service = service;
         this._validator = validator;
+        this._storageService = storageService;
         this.postAlbumHandler = this.postAlbumHandler.bind(this);
         this.getAlbumsHandler = this.getAlbumsHandler.bind(this);
         this.getAlbumByIdHandler = this.getAlbumByIdHandler.bind(this);
         this.putAlbumByIdHandler = this.putAlbumByIdHandler.bind(this);
         this.deleteAlbumByIdHandler = this.deleteAlbumByIdHandler.bind(this);
+        this.postAlbumCoverByIdHandler = this.postAlbumCoverByIdHandler.bind(this);
     }
 
     async postAlbumHandler(request, h) {
@@ -61,6 +63,7 @@ class AlbumsHandler {
         try {
             const { id } = request.params;
             const album = await this._service.getAlbumById(id);
+
             return {
                 status: 'success',
                 data: {
@@ -126,6 +129,44 @@ class AlbumsHandler {
                 status: 'success',
                 message: 'Album berhasil dihapus',
             };
+        } catch (error) {
+            if (error instanceof ClientError) {
+                const response = h.response({
+                    status: 'fail',
+                    message: error.message,
+                });
+                response.code(error.statusCode);
+                return response;
+            }
+
+            // Server ERROR!
+            const response = h.response({
+                status: 'error',
+                message: 'Maaf, terjadi kegagalan pada server kami.',
+            });
+            response.code(500);
+            console.error(error);
+            return response;
+        }
+    }
+
+    async postAlbumCoverByIdHandler(request, h) {
+        try {
+            const { id } = request.params;
+            const { cover } = request.payload;
+
+            this._validator.validateAlbumCoverPayload(cover.hapi.headers);
+
+            const filename = await this._service.addAlbumCoverById(id, cover.hapi);
+
+            await this._storageService.writeFile(cover, filename);
+
+            const response = h.response({
+                status: 'success',
+                message: 'Sampul berhasil diunggah',
+            });
+            response.code(201);
+            return response;
         } catch (error) {
             if (error instanceof ClientError) {
                 const response = h.response({

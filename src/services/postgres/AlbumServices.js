@@ -34,7 +34,7 @@ class AlbumsSerives {
 
     async getAlbumById(id) {
         const query = {
-            text: 'SELECT id,name,year FROM albums WHERE id = $1',
+            text: 'SELECT id,name,year, cover FROM albums WHERE id = $1',
             values: [id],
         };
         const querySongs = {
@@ -46,8 +46,22 @@ class AlbumsSerives {
         if (!result.rows.length) {
             throw new NotFoundError('Lagu tidak ditemukan');
         }
-        return {
+
+        const { cover: ulrImage } = result.rows[0];
+        let coverUrl = null;
+        if (ulrImage !== null) {
+            coverUrl = `http://${process.env.HOST}:${process.env.PORT}/albums/cover/${ulrImage}`;
+        }
+
+        delete result.rows[0].cover;
+
+        const albumResult = {
             ...result.rows[0],
+            coverUrl,
+        };
+
+        return {
+            ...albumResult,
             songs: resultSongs.rows,
         };
     }
@@ -75,6 +89,21 @@ class AlbumsSerives {
         if (!result.rows.length) {
             throw new NotFoundError('Lagu gagal dihapus. Id tidak ditemukan');
         }
+    }
+
+    async addAlbumCoverById(id, meta) {
+        const filename = +new Date() + meta.filename;
+        const query = {
+            text: 'UPDATE albums SET cover = $1 WHERE id = $2 RETURNING cover',
+            values: [filename, id],
+        };
+
+        const result = await this._pool.query(query);
+        if (!result.rows.length) {
+            throw new NotFoundError('Gambar untuk album gagal diunggah');
+        }
+
+        return result.rows[0].cover;
     }
 }
 
