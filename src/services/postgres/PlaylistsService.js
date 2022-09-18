@@ -22,34 +22,27 @@ class PlaylistsService {
 
         const result = await this._pool.query(query);
 
-        await this._cacheService.delete(`playlists:${owner}`);
         return result.rows[0].id;
     }
 
     async getPlaylists(owner) {
-        try {
-            const result = await this._cacheService.get(`playlists:${owner}`);
-            return JSON.parse(result);
-        } catch (error) {
-            const query = {
-                text: `
+        const query = {
+            text: `
                     SELECT playlists.id, playlists.name, users.username FROM playlists
                     INNER JOIN users ON playlists.owner = users.id
                     LEFT JOIN collaborations ON collaborations.playlist_id = playlists.id
                     WHERE playlists.owner = $1 OR collaborations.user_id = $1`,
-                values: [owner],
-            };
+            values: [owner],
+        };
 
-            const result = await this._pool.query(query);
+        const result = await this._pool.query(query);
 
-            await this._cacheService.set(`playlists:${owner}`, JSON.stringify(result.rows));
-            return result.rows;
-        }
+        return result.rows;
     }
 
     async deletePlaylistById(id) {
         const query = {
-            text: 'DELETE FROM playlists WHERE id = $1 RETURNING id, owner',
+            text: 'DELETE FROM playlists WHERE id = $1 RETURNING id',
             values: [id],
         };
 
@@ -58,8 +51,6 @@ class PlaylistsService {
         if (!result.rows.length) {
             throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan');
         }
-
-        await this._cacheService.delete(`playlists:${result.rows[0].owner}`);
     }
 
     async addSongToPlaylist(playlist_id, song_id) {
