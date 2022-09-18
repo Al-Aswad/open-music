@@ -5,8 +5,10 @@ const NotFoundError = require('../../exeptions/NotFoundError');
 
 /* eslint-disable no-underscore-dangle */
 class AlbumsSerives {
-    constructor() {
+    constructor(cacheService) {
         this._pool = new Pool();
+
+        this._cacheService = cacheService;
     }
 
     async getAlbums() {
@@ -108,8 +110,7 @@ class AlbumsSerives {
 
     async addAlbumLikeById(userId, albumId) {
         const id = `user-album-like-${nanoid(16)}`;
-        console.log('user_id', userId);
-        console.log('album_id', albumId);
+
         const query = {
             text: 'INSERT INTO user_album_likes(id, user_id, album_id) VALUES($1, $2, $3) RETURNING id',
             values: [id, userId, albumId],
@@ -120,6 +121,7 @@ class AlbumsSerives {
             throw new InvariantError('Gagal menambahkan like');
         }
 
+        await this._cacheService.delete(`likes:album-${albumId}`);
         return 'Album berhasil disukai';
     }
 
@@ -135,12 +137,18 @@ class AlbumsSerives {
     }
 
     async countAlbumLikeById(albumId) {
-        const query = {
-            text: 'SELECT COUNT(*) FROM user_album_likes WHERE album_id = $1',
-            values: [albumId],
-        };
-        const result = await this._pool.query(query);
-        return result.rows[0].count;
+        try {
+            const result = await this._cacheService.get(`likes:album-${albumId}`);
+            return JSON.parse(result);
+        } catch (error) {
+            const query = {
+                text: 'SELECT COUNT(id) FROM user_album_likes WHERE album_id = $1',
+                values: [albumId],
+            };
+            const result = await this._pool.query(query);
+            await this._cacheService.set(`likes:album-${albumId}`, JSON.stringify(result.rows[0].count));
+            return result.rows[0].count;
+        }
     }
 
     async verifyAlbumLikeExist(userId, albumId) {
@@ -149,7 +157,7 @@ class AlbumsSerives {
             values: [userId, albumId],
         };
         const result = await this._pool.query(query);
-        console.log(result.rows);
+
         if (!result.rows.length) {
             return false;
         }
@@ -162,6 +170,7 @@ class AlbumsSerives {
             values: [userId, albumId],
         };
         const result = await this._pool.query(query);
+        await this._cacheService.delete(`likes:album-${albumId}`);
         if (!result.rows.length) {
             throw new InvariantError('Gagal menghapus like');
         }
